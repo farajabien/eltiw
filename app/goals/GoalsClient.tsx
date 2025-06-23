@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { GoalsManager } from "@/components/goals/GoalsManager";
+import { SampleDataLoader } from "@/components/SampleDataLoader";
 
 export function GoalsClient() {
   const [mounted, setMounted] = useState(false);
@@ -21,5 +22,10 @@ export function GoalsClient() {
     );
   }
 
-  return <GoalsManager />;
+  return (
+    <>
+      <SampleDataLoader />
+      <GoalsManager />
+    </>
+  );
 } 

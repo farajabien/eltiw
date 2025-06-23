@@ -15,179 +15,245 @@ export function AddProgressModal({ isOpen, onClose, goal, onAddProgress }: AddPr
     amount: "",
     note: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [errors, setErrors] = useState<{
-    amount?: string;
-  }>({});
+  const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
+  const remaining = goal.cost - totalSaved;
 
-  const validateForm = (): boolean => {
-    const newErrors: { amount?: string } = {};
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
 
-    const amount = parseFloat(formData.amount);
-    if (!formData.amount || isNaN(amount) || amount <= 0) {
-      newErrors.amount = "Please enter a valid amount greater than 0";
+    if (!formData.amount) {
+      newErrors.amount = "Amount is required";
+    } else {
+      const amount = parseFloat(formData.amount);
+      if (isNaN(amount) || amount <= 0) {
+        newErrors.amount = "Amount must be a positive number";
+      } else if (amount > remaining) {
+        newErrors.amount = `Amount cannot exceed remaining balance (${remaining.toLocaleString()} KES)`;
+      }
+    }
+
+    if (formData.note && formData.note.trim().length > 200) {
+      newErrors.note = "Note must be less than 200 characters";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
 
-    const newProgress: GoalProgress = {
-      id: crypto.randomUUID(),
-      amount: parseFloat(formData.amount),
-      note: formData.note.trim() || undefined,
-      date: new Date().toISOString(),
-    };
+    setIsLoading(true);
+    try {
+      const progress: GoalProgress = {
+        id: crypto.randomUUID(),
+        amount: parseFloat(formData.amount),
+        note: formData.note.trim() || undefined,
+        date: new Date().toISOString(),
+      };
 
-    onAddProgress(newProgress);
-    
-    // Reset form
+      await onAddProgress(progress);
+      handleClose();
+    } catch (error) {
+      console.error('Error adding progress:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
     setFormData({
       amount: "",
       note: "",
     });
     setErrors({});
+    setIsLoading(false);
     onClose();
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error for this field when user starts typing
-    if (errors[field as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
     }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   if (!isOpen) return null;
 
-  const totalSaved = goal.progress.reduce((sum, entry) => sum + entry.amount, 0);
-  const remainingAmount = Math.max(0, goal.cost - totalSaved);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-background border rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Add Progress</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Goal Info */}
-        <div className="bg-muted rounded-lg p-3 mb-4">
-          <h3 className="font-medium">{goal.name}</h3>
-          <div className="text-sm text-muted-foreground mt-1">
-            <div>Target: ${goal.cost.toFixed(2)}</div>
-            <div>Saved: ${totalSaved.toFixed(2)}</div>
-            <div>Remaining: ${remainingAmount.toFixed(2)}</div>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Amount */}
-          <div>
-            <label htmlFor="amount" className="block text-sm font-medium mb-1">
-              Amount Saved *
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-muted-foreground">$</span>
-              <input
-                id="amount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => handleInputChange("amount", e.target.value)}
-                placeholder="0.00"
-                className="w-full pl-8 pr-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            {errors.amount && <p className="text-sm text-red-500 mt-1">{errors.amount}</p>}
-          </div>
-
-          {/* Note */}
-          <div>
-            <label htmlFor="note" className="block text-sm font-medium mb-1">
-              Note (optional)
-            </label>
-            <textarea
-              id="note"
-              value={formData.note}
-              onChange={(e) => handleInputChange("note", e.target.value)}
-              placeholder="e.g., Salary bonus, side project income..."
-              rows={3}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-            />
-          </div>
-
-          {/* Quick Amount Buttons */}
-          <div>
-            <p className="text-sm font-medium mb-2">Quick amounts:</p>
-            <div className="grid grid-cols-3 gap-2">
-              {[50, 100, 200].map((amount) => (
-                <button
-                  key={amount}
-                  type="button"
-                  onClick={() => handleInputChange("amount", amount.toString())}
-                  className="px-3 py-2 text-sm border border-input rounded-md hover:bg-accent transition-colors"
-                >
-                  ${amount}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Remaining amount suggestion */}
-          {remainingAmount > 0 && (
-            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                <strong>Complete this goal:</strong>{" "}
-                <button
-                  type="button"
-                  onClick={() => handleInputChange("amount", remainingAmount.toFixed(2))}
-                  className="underline hover:no-underline"
-                >
-                  Add ${remainingAmount.toFixed(2)}
-                </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Add Progress
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {goal.name}
               </p>
             </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
             <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-input rounded-md text-foreground hover:bg-accent transition-colors"
+              onClick={handleClose}
+              disabled={isLoading}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200 disabled:opacity-50"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-            >
-              Add Progress
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        </form>
+
+          {/* Progress Summary */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div className="text-gray-600 dark:text-gray-400">Total Saved</div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(totalSaved)}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-600 dark:text-gray-400">Remaining</div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(remaining)}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                <span>Progress</span>
+                <span>{((totalSaved / goal.cost) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min((totalSaved / goal.cost) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Amount */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Amount (KES) *
+              </label>
+              <input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => handleInputChange("amount", e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                  errors.amount 
+                    ? 'border-red-300 focus:ring-red-500' 
+                    : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                }`}
+                placeholder="0"
+                min="0"
+                max={remaining}
+                step="0.01"
+                disabled={isLoading}
+              />
+              {errors.amount && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.amount}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Maximum: {formatCurrency(remaining)}
+              </p>
+            </div>
+
+            {/* Note */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Note (optional)
+              </label>
+              <textarea
+                value={formData.note}
+                onChange={(e) => handleInputChange("note", e.target.value)}
+                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 ${
+                  errors.note ? 'border-red-300 focus:ring-red-500' : ''
+                }`}
+                placeholder="e.g., Monthly savings, Bonus, etc."
+                rows={3}
+                maxLength={200}
+                disabled={isLoading}
+              />
+              {errors.note && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.note}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {formData.note.length}/200 characters
+              </p>
+            </div>
+
+            {/* Quick Amount Buttons */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Quick Amounts
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[1000, 5000, 10000, 25000, 50000, 100000].map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => handleInputChange("amount", amount.toString())}
+                    disabled={isLoading || amount > remaining}
+                    className={`px-3 py-2 text-sm border rounded-md transition-all duration-200 hover:scale-105 ${
+                      parseFloat(formData.amount) === amount
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    } ${isLoading || amount > remaining ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {formatCurrency(amount)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Adding...
+                  </>
+                ) : (
+                  'Add Progress'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ export function GoalCard({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Use Slug Store for all calculations
   const {
@@ -36,16 +37,26 @@ export function GoalCard({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) {
   const isOverdue = isGoalOverdue(goal);
   const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
 
-  const handleAddProgress = (progressData: GoalProgress) => {
-    addProgress(goal.id, {
-      amount: progressData.amount,
-      note: progressData.note,
-    });
-    setIsAddProgressOpen(false);
+  const handleAddProgress = async (progressData: GoalProgress) => {
+    setIsLoading(true);
+    try {
+      addProgress(goal.id, {
+        amount: progressData.amount,
+        note: progressData.note,
+      });
+      setIsAddProgressOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleToggleCompletion = () => {
-    toggleGoalCompletion(goal.id);
+  const handleToggleCompletion = async () => {
+    setIsLoading(true);
+    try {
+      toggleGoalCompletion(goal.id);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getCategoryIcon = (category: string | undefined) => {
@@ -72,55 +83,54 @@ export function GoalCard({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) {
 
   const getStatusBadge = () => {
     if (goal.isCompleted) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          ✅ Completed
-        </span>
-      );
+      return <span className="text-green-600 text-xs">✅</span>;
     }
     if (isOverdue) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          ⚠️ Overdue
-        </span>
-      );
+      return <span className="text-red-600 text-xs">⚠️</span>;
     }
-    return (
-      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-        📈 In Progress
-      </span>
-    );
+    return <span className="text-blue-600 text-xs">📈</span>;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
     <>
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border transition-all duration-200 hover:shadow-lg ${
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
         goal.isCompleted ? 'border-green-200 dark:border-green-800' : 
         isOverdue ? 'border-red-200 dark:border-red-800' : 'border-gray-200 dark:border-gray-700'
-      }`}>
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{getCategoryIcon(goal.category)}</span>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+      } ${isLoading ? 'opacity-75 pointer-events-none' : ''}`}>
+        {/* Compact Header */}
+        <div className="p-3 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-lg">{getCategoryIcon(goal.category)}</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-gray-900 dark:text-white truncate">
                   {goal.name}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {goal.category}
-                </p>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>{formatCurrency(goal.cost)}</span>
+                  <span>•</span>
+                  <span>{new Date(goal.targetDate).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {getStatusBadge()}
               <button
                 onClick={handleToggleCompletion}
-                className={`p-1 rounded-full transition-colors ${
+                disabled={isLoading}
+                className={`p-1 rounded-full transition-all duration-200 hover:scale-110 ${
                   goal.isCompleted 
                     ? 'text-green-600 hover:bg-green-100' 
                     : 'text-gray-400 hover:bg-gray-100'
-                }`}
+                } ${isLoading ? 'opacity-50' : ''}`}
               >
                 {goal.isCompleted ? '✅' : '⭕'}
               </button>
@@ -128,89 +138,70 @@ export function GoalCard({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-4">
-          {/* Financial Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Target Cost</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                ${goal.cost.toFixed(2)}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Saved</p>
-              <p className="text-lg font-semibold text-green-600">
-                ${totalSaved.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Progress</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
+        {/* Compact Content */}
+        <div className="p-3 space-y-3">
+          {/* Progress Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300">
+                {formatCurrency(totalSaved)} / {formatCurrency(goal.cost)}
+              </span>
+              <span className="font-medium text-gray-900 dark:text-white">
                 {progress.toFixed(0)}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
               <div
-                className={`h-2 rounded-full transition-all duration-300 ${getProgressColor()}`}
+                className={`h-1.5 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
+          </div>
+
+          {/* Quick Info */}
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>Monthly: {formatCurrency(monthlyNeeded)}</span>
+            <span>{monthsRemaining}m left</span>
             <button
               onClick={() => setIsHistoryOpen(true)}
-              className="text-xs text-blue-600 hover:text-blue-800 mt-1"
+              className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
             >
-              View History
+              History
             </button>
           </div>
 
-          {/* Time and Monthly Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Deadline</p>
-              <p className={`text-sm font-medium ${
-                isOverdue ? 'text-red-600' : 'text-gray-900 dark:text-white'
-              }`}>
-                {new Date(goal.targetDate).toLocaleDateString()}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {monthsRemaining} month{monthsRemaining !== 1 ? 's' : ''} remaining
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Needed</p>
-              <p className="text-sm font-semibold text-blue-600">
-                ${monthlyNeeded.toFixed(0)}
-              </p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          {/* Compact Actions */}
+          <div className="flex gap-1">
             <button
               onClick={() => setIsAddProgressOpen(true)}
-              className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+              disabled={isLoading}
+              className="flex-1 px-2 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Progress
+              + Progress
             </button>
             <button
               onClick={() => setIsEditOpen(true)}
-              className="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
+              disabled={isLoading}
+              className="px-2 py-1.5 border border-gray-300 text-gray-700 text-xs rounded hover:bg-gray-50 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Edit
             </button>
             <button
               onClick={() => setIsDeleteOpen(true)}
-              className="px-3 py-2 border border-red-300 text-red-700 text-sm rounded-md hover:bg-red-50 transition-colors"
+              disabled={isLoading}
+              className="px-2 py-1.5 border border-red-300 text-red-700 text-xs rounded hover:bg-red-50 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete
+              Del
             </button>
           </div>
         </div>
+
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-gray-800/50 rounded-lg flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
