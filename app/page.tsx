@@ -43,7 +43,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="container space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24">
+      <section className="container mx-auto space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             Features
@@ -128,7 +128,7 @@ export default function Home() {
       </section>
 
       {/* Technology Section */}
-      <section className="container py-8 md:py-12 lg:py-24">
+      <section className="container mx-auto py-8 md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             The No-Database Revolution
@@ -171,7 +171,7 @@ export default function Home() {
       </section>
 
       {/* Demo Section */}
-      <section className="container space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24">
+      <section className="container mx-auto space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             How It Works
@@ -220,7 +220,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="container py-8 md:py-12 lg:py-24">
+      <section className="container mx-auto py-8 md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             Ready to Start?
