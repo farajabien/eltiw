@@ -120,299 +120,300 @@ const migrations = {
   
 };
 
-export const useGoalsStore = create<GoalsState>((set, get) => ({
-  ...initialState,
+export const useGoalsStore = create<GoalsState>(
+  (set, get) => ({
+    ...initialState,
 
-  // Migration function
-  migrateState: (oldState: Record<string, unknown>) => {
-    let migratedState = { ...oldState };
-    const currentVersion = (migratedState.schemaVersion as number) || 0;
-    
-    // Apply migrations sequentially
-    for (let version = currentVersion; version < CURRENT_SCHEMA_VERSION; version++) {
-      if (migrations[version as keyof typeof migrations]) {
-        migratedState = migrations[version as keyof typeof migrations](migratedState);
-        migratedState.schemaVersion = version + 1;
-        
-        console.log(`✅ Migrated state to version ${version + 1}`);
-      }
-    }
-    
-    // Set the migrated state
-    set(migratedState as unknown as GoalsState);
-    
-    // Track migration in analytics
-    if (currentVersion < CURRENT_SCHEMA_VERSION) {
-      analytics.errorOccurred('state_migration', `Migrated from version ${currentVersion} to ${CURRENT_SCHEMA_VERSION}`);
-    }
-  },
-
-  // Core Actions
-  addGoal: (goalData) => {
-    const newGoal: Goal = {
-      ...goalData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      progress: [],
-      isCompleted: false,
-    };
-    
-    set(state => ({
-      goals: [newGoal, ...state.goals],
-    }));
-
-    // Track analytics
-    analytics.goalCreated({
-      category: goalData.category || 'other',
-      cost: goalData.cost,
-      targetDate: goalData.targetDate,
-    });
-  },
-
-  updateGoal: (goalId, updates) => {
-    const currentGoal = get().goals.find(g => g.id === goalId);
-    
-    set(state => ({
-      goals: state.goals.map(goal =>
-        goal.id === goalId
-          ? { ...goal, ...updates, updatedAt: new Date().toISOString() }
-          : goal
-      ),
-    }));
-
-    // Track analytics
-    if (currentGoal) {
-      analytics.goalUpdated(goalId, updates);
+    // Migration function
+    migrateState: (oldState: Record<string, unknown>) => {
+      let migratedState = { ...oldState };
+      const currentVersion = (migratedState.schemaVersion as number) || 0;
       
-      // Track completion if goal was just completed
-      if (updates.isCompleted && !currentGoal.isCompleted) {
-        const createdAt = new Date(currentGoal.createdAt);
-        const completedAt = new Date();
-        const timeToComplete = completedAt.getTime() - createdAt.getTime();
+      // Apply migrations sequentially
+      for (let version = currentVersion; version < CURRENT_SCHEMA_VERSION; version++) {
+        if (migrations[version as keyof typeof migrations]) {
+          migratedState = migrations[version as keyof typeof migrations](migratedState);
+          migratedState.schemaVersion = version + 1;
+          
+          console.log(`✅ Migrated state to version ${version + 1}`);
+        }
+      }
+      
+      // Set the migrated state
+      set(migratedState as unknown as GoalsState);
+      
+      // Track migration in analytics
+      if (currentVersion < CURRENT_SCHEMA_VERSION) {
+        analytics.errorOccurred('state_migration', `Migrated from version ${currentVersion} to ${CURRENT_SCHEMA_VERSION}`);
+      }
+    },
+
+    // Core Actions
+    addGoal: (goalData) => {
+      const newGoal: Goal = {
+        ...goalData,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        progress: [],
+        isCompleted: false,
+      };
+      
+      set(state => ({
+        goals: [newGoal, ...state.goals],
+      }));
+
+      // Track analytics
+      analytics.goalCreated({
+        category: goalData.category || 'other',
+        cost: goalData.cost,
+        targetDate: goalData.targetDate,
+      });
+    },
+
+    updateGoal: (goalId, updates) => {
+      const currentGoal = get().goals.find(g => g.id === goalId);
+      
+      set(state => ({
+        goals: state.goals.map(goal =>
+          goal.id === goalId
+            ? { ...goal, ...updates, updatedAt: new Date().toISOString() }
+            : goal
+        ),
+      }));
+
+      // Track analytics
+      if (currentGoal) {
+        analytics.goalUpdated(goalId, updates);
         
-        analytics.goalCompleted(goalId, {
-          category: currentGoal.category || 'other',
-          cost: currentGoal.cost,
-          timeToComplete: Math.floor(timeToComplete / (1000 * 60 * 60 * 24)), // Days
+        // Track completion if goal was just completed
+        if (updates.isCompleted && !currentGoal.isCompleted) {
+          const createdAt = new Date(currentGoal.createdAt);
+          const completedAt = new Date();
+          const timeToComplete = completedAt.getTime() - createdAt.getTime();
+          
+          analytics.goalCompleted(goalId, {
+            category: currentGoal.category || 'other',
+            cost: currentGoal.cost,
+            timeToComplete: Math.floor(timeToComplete / (1000 * 60 * 60 * 24)), // Days
+          });
+        }
+      }
+    },
+
+    deleteGoal: (goalId) => {
+      const goalToDelete = get().goals.find(g => g.id === goalId);
+      
+      set(state => ({
+        goals: state.goals.filter(goal => goal.id !== goalId),
+      }));
+
+      // Track analytics
+      if (goalToDelete) {
+        analytics.goalDeleted(goalId, {
+          category: goalToDelete.category || 'other',
+          cost: goalToDelete.cost,
         });
       }
-    }
-  },
+    },
 
-  deleteGoal: (goalId) => {
-    const goalToDelete = get().goals.find(g => g.id === goalId);
-    
-    set(state => ({
-      goals: state.goals.filter(goal => goal.id !== goalId),
-    }));
+    addProgress: (goalId, progressData) => {
+      const newProgress: GoalProgress = {
+        ...progressData,
+        id: crypto.randomUUID(),
+        date: new Date().toISOString(),
+      };
 
-    // Track analytics
-    if (goalToDelete) {
-      analytics.goalDeleted(goalId, {
-        category: goalToDelete.category || 'other',
-        cost: goalToDelete.cost,
+      set(state => ({
+        goals: state.goals.map(goal => {
+          if (goal.id === goalId) {
+            const updatedProgress = [...goal.progress, newProgress];
+            const totalSaved = updatedProgress.reduce((sum, p) => sum + p.amount, 0);
+            const isCompleted = totalSaved >= goal.cost;
+            
+            return {
+              ...goal,
+              progress: updatedProgress,
+              isCompleted,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return goal;
+        }),
+      }));
+
+      // Track analytics
+      analytics.progressAdded(goalId, progressData.amount);
+    },
+
+    toggleGoalCompletion: (goalId) => {
+      set(state => ({
+        goals: state.goals.map(goal =>
+          goal.id === goalId
+            ? { ...goal, isCompleted: !goal.isCompleted, updatedAt: new Date().toISOString() }
+            : goal
+        ),
+      }));
+    },
+
+    clearGoals: () => {
+      set({ goals: [] });
+    },
+
+    // Filter Actions
+    setCategoryFilter: (category) => {
+      set(state => ({
+        filters: { ...state.filters, category },
+      }));
+    },
+
+    setStatusFilter: (status) => {
+      set(state => ({
+        filters: { ...state.filters, status },
+      }));
+    },
+
+    setSearchFilter: (search) => {
+      set(state => ({
+        filters: { ...state.filters, search },
+      }));
+    },
+
+    setView: (view) => {
+      set({ view });
+    },
+
+    clearFilters: () => {
+      set({ filters: initialState.filters });
+    },
+
+    // Encryption Actions
+    enableEncryption: (password) => {
+      set({
+        encryptionEnabled: true,
+        encryptionPassword: password,
       });
-    }
-  },
+      
+      // Track analytics
+      analytics.encryptionEnabled();
+    },
 
-  addProgress: (goalId, progressData) => {
-    const newProgress: GoalProgress = {
-      ...progressData,
-      id: crypto.randomUUID(),
-      date: new Date().toISOString(),
-    };
+    disableEncryption: () => {
+      set({
+        encryptionEnabled: false,
+        encryptionPassword: '',
+      });
+      
+      // Track analytics
+      analytics.encryptionDisabled();
+    },
 
-    set(state => ({
-      goals: state.goals.map(goal => {
-        if (goal.id === goalId) {
-          const updatedProgress = [...goal.progress, newProgress];
-          const totalSaved = updatedProgress.reduce((sum, p) => sum + p.amount, 0);
-          const isCompleted = totalSaved >= goal.cost;
-          
-          return {
-            ...goal,
-            progress: updatedProgress,
-            isCompleted,
-            updatedAt: new Date().toISOString(),
-          };
+    setEncryptionPassword: (password) => {
+      set({ encryptionPassword: password });
+    },
+
+    // Computed Values
+    getFilteredGoals: () => {
+      const { goals, filters } = get();
+      return goals.filter(goal => {
+        // Category filter
+        if (filters.category !== 'all' && goal.category !== filters.category) {
+          return false;
         }
-        return goal;
-      }),
-    }));
+        
+        // Status filter
+        if (filters.status === 'active' && goal.isCompleted) {
+          return false;
+        }
+        if (filters.status === 'completed' && !goal.isCompleted) {
+          return false;
+        }
+        
+        // Search filter
+        if (filters.search && !goal.name.toLowerCase().includes(filters.search.toLowerCase())) {
+          return false;
+        }
+        
+        return true;
+      });
+    },
 
-    // Track analytics
-    analytics.progressAdded(goalId, progressData.amount);
-  },
+    getCompletedGoals: () => {
+      return get().goals.filter(goal => goal.isCompleted);
+    },
 
-  toggleGoalCompletion: (goalId) => {
-    set(state => ({
-      goals: state.goals.map(goal =>
-        goal.id === goalId
-          ? { ...goal, isCompleted: !goal.isCompleted, updatedAt: new Date().toISOString() }
-          : goal
-      ),
-    }));
-  },
+    getActiveGoals: () => {
+      return get().goals.filter(goal => !goal.isCompleted);
+    },
 
-  clearGoals: () => {
-    set({ goals: [] });
-  },
+    getTotalSaved: () => {
+      return get().goals.reduce((sum, goal) => {
+        const goalProgress = goal.progress.reduce((progressSum, p) => progressSum + p.amount, 0);
+        return sum + goalProgress;
+      }, 0);
+    },
 
-  // Filter Actions
-  setCategoryFilter: (category) => {
-    set(state => ({
-      filters: { ...state.filters, category },
-    }));
-  },
+    getTotalTargetAmount: () => {
+      return get().goals.reduce((sum, goal) => sum + goal.cost, 0);
+    },
 
-  setStatusFilter: (status) => {
-    set(state => ({
-      filters: { ...state.filters, status },
-    }));
-  },
+    getOverallProgress: () => {
+      const totalSaved = get().getTotalSaved();
+      const totalTarget = get().getTotalTargetAmount();
+      return totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+    },
 
-  setSearchFilter: (search) => {
-    set(state => ({
-      filters: { ...state.filters, search },
-    }));
-  },
+    getMonthlySavingsNeeded: () => {
+      return get().getActiveGoals().reduce((sum, goal) => {
+        return sum + get().getGoalMonthlyNeeded(goal);
+      }, 0);
+    },
 
-  setView: (view) => {
-    set({ view });
-  },
+    getOverdueGoals: () => {
+      return get().goals.filter(goal => get().isGoalOverdue(goal));
+    },
 
-  clearFilters: () => {
-    set({ filters: initialState.filters });
-  },
+    // Utility Functions
+    getGoalById: (id) => {
+      return get().goals.find(goal => goal.id === id);
+    },
 
-  // Encryption Actions
-  enableEncryption: (password) => {
-    set({
-      encryptionEnabled: true,
-      encryptionPassword: password,
-    });
-    
-    // Track analytics
-    analytics.encryptionEnabled();
-  },
-
-  disableEncryption: () => {
-    set({
-      encryptionEnabled: false,
-      encryptionPassword: '',
-    });
-    
-    // Track analytics
-    analytics.encryptionDisabled();
-  },
-
-  setEncryptionPassword: (password) => {
-    set({ encryptionPassword: password });
-  },
-
-  // Computed Values
-  getFilteredGoals: () => {
-    const { goals, filters } = get();
-    return goals.filter(goal => {
-      // Category filter
-      if (filters.category !== 'all' && goal.category !== filters.category) {
-        return false;
-      }
+    getGoalProgress: (goalId) => {
+      const goal = get().getGoalById(goalId);
+      if (!goal) return 0;
       
-      // Status filter
-      if (filters.status === 'active' && goal.isCompleted) {
-        return false;
-      }
-      if (filters.status === 'completed' && !goal.isCompleted) {
-        return false;
-      }
+      const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
+      return goal.cost > 0 ? (totalSaved / goal.cost) * 100 : 0;
+    },
+
+    getGoalMonthlyNeeded: (goal) => {
+      if (goal.isCompleted) return 0;
       
-      // Search filter
-      if (filters.search && !goal.name.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
+      const monthsRemaining = get().getGoalTimeRemaining(goal);
+      return monthsRemaining > 0 ? Math.ceil(goal.cost / monthsRemaining) : goal.cost;
+    },
+
+    getGoalTimeRemaining: (goal) => {
+      const now = new Date();
+      const targetDate = new Date(goal.targetDate);
+      const diffTime = targetDate.getTime() - now.getTime();
+      const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44)); // Average days per month
       
-      return true;
-    });
-  },
+      return Math.max(1, diffMonths);
+    },
 
-  getCompletedGoals: () => {
-    return get().goals.filter(goal => goal.isCompleted);
-  },
-
-  getActiveGoals: () => {
-    return get().goals.filter(goal => !goal.isCompleted);
-  },
-
-  getTotalSaved: () => {
-    return get().goals.reduce((sum, goal) => {
-      const goalProgress = goal.progress.reduce((progressSum, p) => progressSum + p.amount, 0);
-      return sum + goalProgress;
-    }, 0);
-  },
-
-  getTotalTargetAmount: () => {
-    return get().goals.reduce((sum, goal) => sum + goal.cost, 0);
-  },
-
-  getOverallProgress: () => {
-    const totalSaved = get().getTotalSaved();
-    const totalTarget = get().getTotalTargetAmount();
-    return totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
-  },
-
-  getMonthlySavingsNeeded: () => {
-    return get().getActiveGoals().reduce((sum, goal) => {
-      return sum + get().getGoalMonthlyNeeded(goal);
-    }, 0);
-  },
-
-  getOverdueGoals: () => {
-    return get().goals.filter(goal => get().isGoalOverdue(goal));
-  },
-
-  // Utility Functions
-  getGoalById: (id) => {
-    return get().goals.find(goal => goal.id === id);
-  },
-
-  getGoalProgress: (goalId) => {
-    const goal = get().getGoalById(goalId);
-    if (!goal) return 0;
-    
-    const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
-    return goal.cost > 0 ? (totalSaved / goal.cost) * 100 : 0;
-  },
-
-  getGoalMonthlyNeeded: (goal) => {
-    if (goal.isCompleted) return 0;
-    
-    const monthsRemaining = get().getGoalTimeRemaining(goal);
-    return monthsRemaining > 0 ? Math.ceil(goal.cost / monthsRemaining) : goal.cost;
-  },
-
-  getGoalTimeRemaining: (goal) => {
-    const now = new Date();
-    const targetDate = new Date(goal.targetDate);
-    const diffTime = targetDate.getTime() - now.getTime();
-    const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44)); // Average days per month
-    
-    return Math.max(1, diffMonths);
-  },
-
-  isGoalOverdue: (goal) => {
-    if (goal.isCompleted) return false;
-    
-    const now = new Date();
-    const targetDate = new Date(goal.targetDate);
-    return now > targetDate;
-  },
-}), {
-  compress: true,
-  debounceMs: 500,
-  key: 'goals',
-  // Encryption can be enabled by setting these values
-  // encrypt: true, // Enable when user sets password
-  // password: 'user-password', // Set dynamically
-}); 
+    isGoalOverdue: (goal) => {
+      if (goal.isCompleted) return false;
+      
+      const now = new Date();
+      const targetDate = new Date(goal.targetDate);
+      return now > targetDate;
+    },
+  }),
+  {
+    key: 'goals',
+    compress: process.env.NEXT_PUBLIC_ENABLE_COMPRESSION === 'true',
+    debounceMs: 500,
+    encrypt: process.env.NEXT_PUBLIC_ENABLE_ENCRYPTION === 'true',
+  }
+); 

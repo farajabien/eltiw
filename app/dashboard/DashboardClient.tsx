@@ -77,10 +77,21 @@ export function DashboardClient() {
     });
   };
 
-  const copyShareUrl = () => {
-    const shareUrl = window.location.href;
-    navigator.clipboard.writeText(shareUrl);
-    alert('Share URL copied to clipboard!');
+  const copyShareUrl = async () => {
+    try {
+      // The slug-store automatically keeps the URL query params in sync with the state.
+      // We will construct a clean, shareable URL that always points to the root,
+      // which then redirects to the main goals page, preserving the state.
+      const shareUrl = new URL(window.location.href);
+      shareUrl.pathname = '/'; // Create a clean link to the root page
+      
+      await navigator.clipboard.writeText(shareUrl.toString());
+      
+      alert('Share URL copied to clipboard! Anyone with this link can view your goals.');
+    } catch (error) {
+      console.error('Error copying share URL:', error);
+      alert('Failed to copy share URL. Please try again.');
+    }
   };
 
   if (totalGoals === 0) {

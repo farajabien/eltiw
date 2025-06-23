@@ -1,5 +1,84 @@
 # ELTIW Deployment Guide
 
+This guide covers deploying the ELTIW application to a production environment. For the best results, we recommend deploying on [Vercel](https://vercel.com/), as the app is optimized for its serverless platform.
+
+---
+
+## 1. Prerequisites
+- A [GitHub](https://github.com/) account.
+- [Node.js](https://nodejs.org/) version 18 or later.
+- `pnpm` package manager.
+
+---
+
+## 2. Fork & Clone Repository
+First, create your own copy of the ELTIW repository by forking it on GitHub. Then, clone your forked repository to your local machine.
+
+```bash
+git clone https://github.com/YOUR_USERNAME/eltiw.git
+cd eltiw
+```
+
+---
+
+## 3. Environment Variables
+ELTIW is configured via environment variables. You'll need to set these up both for local development and for your production deployment on Vercel.
+
+### Local Development
+1.  Copy the example environment file:
+    ```bash
+    cp env.example .env.local
+    ```
+2.  Fill in the values in `.env.local`. All available variables are documented in `env.example`. At a minimum, you will need `RESEND_API_KEY` and `EMAIL_FROM` if you wish to use the email snapshot feature.
+
+### Production (Vercel)
+When you deploy to Vercel, you must add the same environment variables from your `.env.local` file to your Vercel project's settings.
+1.  Go to your project on Vercel.
+2.  Navigate to the **Settings** tab.
+3.  Click on **Environment Variables**.
+4.  Add each variable from `env.example` with its corresponding value.
+
+---
+
+## 4. Deployment Steps
+
+### With the Vercel Dashboard (Recommended)
+1.  Go to [vercel.com](https://vercel.com) and sign in with your GitHub account.
+2.  Click **"Add New... -> Project"**.
+3.  Import the Git repository you forked earlier.
+4.  Vercel will automatically detect that it's a Next.js project.
+5.  Before deploying, go to the **Environment Variables** section and add your variables as described above.
+6.  Click **"Deploy"**. Your application will be built and deployed.
+
+### With the Vercel CLI
+For those who prefer the command line:
+```bash
+# Install the Vercel CLI globally
+pnpm install -g vercel
+
+# Log in to your Vercel account
+vercel login
+
+# Link your local project to your Vercel project
+vercel link
+
+# Deploy to production
+vercel --prod
+```
+
+---
+
+## 5. Email Service (Resend)
+To enable the "Email Snapshot" feature, you need to:
+1.  Sign up for a free account at [resend.com](https://resend.com).
+2.  Create an API key and add it as the `RESEND_API_KEY` environment variable.
+3.  Add and verify a sending domain within Resend to avoid spam filters.
+4.  Set the `EMAIL_FROM` environment variable to an address from your verified domain (e.g., `noreply@yourdomain.com`).
+
+---
+
+That's it! Your instance of ELTIW should now be running in production.
+
 ## 🚀 Production Deployment
 
 ELTIW is designed for seamless deployment with zero infrastructure requirements. This guide covers deploying to Vercel with full production optimization.

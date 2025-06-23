@@ -239,7 +239,7 @@ export default function AboutPage() {
             Built with ❤️ using Next.js and Slug Store technology
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            © 2024 ELTIW - Every Lil Thing I Want
+            © 2025 ELTIW - Every Lil Thing I Want
           </p>
         </footer>
       </div>
