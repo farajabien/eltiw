@@ -15,7 +15,7 @@ This guide covers deploying the ELTIW application to a production environment. F
 First, create your own copy of the ELTIW repository by forking it on GitHub. Then, clone your forked repository to your local machine.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/eltiw.git
+git clone https://github.com/farajabien/eltiw.git
 cd eltiw
 ```
 
