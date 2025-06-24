@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { SearchInput } from "@/components/SearchInput";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -95,82 +98,83 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background font-sans`}
       >
-        <PerformanceMonitor />
-        <div className="relative flex min-h-screen flex-col">
-          <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto flex h-14 items-center">
-              <div className="mr-4 hidden md:flex">
-                <Link className="mr-6 flex items-center space-x-2" href="/">
-                  <span className="hidden font-bold sm:inline-block">
-                    ELTIW
-                  </span>
-                </Link>
-                <nav className="flex items-center space-x-6 text-sm font-medium">
-                  <Link
-                    className="transition-colors hover:text-foreground/80 text-foreground/60"
-                    href="/goals"
-                  >
-                    My Goals
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PerformanceMonitor />
+          <div className="relative flex min-h-screen flex-col">
+            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="container mx-auto flex h-14 items-center">
+                <div className="mr-4 hidden md:flex">
+                  <Link className="mr-6 flex items-center space-x-2" href="/">
+                    <span className="hidden font-bold sm:inline-block">
+                      ELTIW
+                    </span>
                   </Link>
-                  <Link
-                    className="transition-colors hover:text-foreground/80 text-foreground/60"
-                    href="/dashboard"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    className="transition-colors hover:text-foreground/80 text-foreground/60"
-                    href="/about"
-                  >
-                    About
-                  </Link>
-                </nav>
-              </div>
-              <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-                <div className="w-full flex-1 md:w-auto md:flex-none">
-                  <button className="inline-flex items-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 relative w-full justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64">
-                    <span className="hidden lg:inline-flex">Search goals...</span>
-                    <span className="inline-flex lg:hidden">Search...</span>
-                  </button>
+                  <nav className="flex items-center space-x-6 text-sm font-medium">
+                    <Link
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                      href="/goals"
+                    >
+                      My Goals
+                    </Link>
+                    <Link
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                      href="/dashboard"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                      href="/about"
+                    >
+                      About
+                    </Link>
+                  </nav>
                 </div>
-                <nav className="flex items-center">
-                  <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
-                    <span className="sr-only">Toggle theme</span>
-                    🌙
-                  </button>
-                </nav>
+                <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+                  <div className="w-full flex-1 md:w-auto md:flex-none">
+                    <SearchInput />
+                  </div>
+                  <nav className="flex items-center">
+                    <ThemeToggle />
+                  </nav>
+                </div>
               </div>
-            </div>
-          </header>
-          <main className="flex-1">{children}</main>
-          <footer className="border-t py-6 md:py-0 mx-auto">
-            <div className="container mx-auto flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-              <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
-                <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-                  Built by{" "}
-                  <a
-                    href="https://fbien.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium underline underline-offset-4"
-                  >
-                    Bienvenu Faraja
-                  </a>
-                  . Powered by{" "}
-                  <a
-                    href="https://github.com/farajabien/slug-store"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium underline underline-offset-4"
-                  >
-                    Slug Store
-                  </a>
-                  .
-                </p>
+            </header>
+            <main className="flex-1">{children}</main>
+            <footer className="border-t py-6 md:py-0 mx-auto">
+              <div className="container mx-auto flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+                <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+                  <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+                    Built by{" "}
+                    <a
+                      href="https://fbien.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium underline underline-offset-4"
+                    >
+                      Bienvenu Faraja
+                    </a>
+                    . Powered by{" "}
+                    <a
+                      href="https://github.com/farajabien/slug-store"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium underline underline-offset-4"
+                    >
+                      Slug Store
+                    </a>
+                    .
+                  </p>
+                </div>
               </div>
-            </div>
-          </footer>
-        </div>
+            </footer>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

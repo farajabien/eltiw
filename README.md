@@ -22,9 +22,9 @@ ELTIW is a modern, privacy-focused goal tracker that helps you plan and achieve 
 ## Getting Started
 
 ### 1. Clone & Install
-```bash
-git clone https://github.com/yourusername/eltiw.git
-cd eltiw
+   ```bash
+   git clone https://github.com/yourusername/eltiw.git
+   cd eltiw
 pnpm install
 ```
 

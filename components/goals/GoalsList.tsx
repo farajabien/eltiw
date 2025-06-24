@@ -18,29 +18,37 @@ export function GoalsList({ goals, onUpdateGoal, onDeleteGoal }: GoalsListProps)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { getGoalProgress, isGoalOverdue } = useGoalsStore();
+  const { getGoalProgress, isGoalOverdue, searchQuery } = useGoalsStore();
 
   // Apply filters and sorting
   useEffect(() => {
     setIsLoading(true);
     
-    let filtered = [...goals];
+    let processedGoals = [...goals];
+
+    // Apply search query first
+    if (searchQuery) {
+      processedGoals = processedGoals.filter(goal =>
+        goal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        goal.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
     
-    // Apply filter
+    // Then apply filter
     switch (filter) {
       case 'active':
-        filtered = filtered.filter(goal => !goal.isCompleted);
+        processedGoals = processedGoals.filter(goal => !goal.isCompleted);
         break;
       case 'completed':
-        filtered = filtered.filter(goal => goal.isCompleted);
+        processedGoals = processedGoals.filter(goal => goal.isCompleted);
         break;
       case 'overdue':
-        filtered = filtered.filter(goal => isGoalOverdue(goal) && !goal.isCompleted);
+        processedGoals = processedGoals.filter(goal => isGoalOverdue(goal) && !goal.isCompleted);
         break;
     }
     
-    // Apply sorting
-    filtered.sort((a, b) => {
+    // Finally, apply sorting
+    processedGoals.sort((a, b) => {
       let aValue: string | number, bValue: string | number;
       
       switch (sortBy) {
@@ -71,12 +79,12 @@ export function GoalsList({ goals, onUpdateGoal, onDeleteGoal }: GoalsListProps)
       }
     });
     
-    setFilteredGoals(filtered);
+    setFilteredGoals(processedGoals);
     
     // Simulate loading delay for smooth UX
     const timer = setTimeout(() => setIsLoading(false), 150);
     return () => clearTimeout(timer);
-  }, [goals, filter, sortBy, sortOrder, getGoalProgress, isGoalOverdue]);
+  }, [goals, filter, sortBy, sortOrder, getGoalProgress, isGoalOverdue, searchQuery]);
 
   const getFilterCount = (filterType: typeof filter) => {
     switch (filterType) {

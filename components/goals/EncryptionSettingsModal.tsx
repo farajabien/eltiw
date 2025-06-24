@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useGoalsStore } from "@/lib/stores/goalsStore";
 import { Button } from "@/components/ui/button";
 
 interface EncryptionSettingsModalProps {
@@ -10,45 +8,8 @@ interface EncryptionSettingsModalProps {
 }
 
 export function EncryptionSettingsModal({ isOpen, onClose }: EncryptionSettingsModalProps) {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isEnabling, setIsEnabling] = useState(false);
-  const [error, setError] = useState("");
-  
-  const { encryptionEnabled, enableEncryption, disableEncryption } = useGoalsStore();
-
-  const handleEnableEncryption = async () => {
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setIsEnabling(true);
-    setError("");
-    
-    try {
-      enableEncryption(password);
-      setPassword("");
-      setConfirmPassword("");
-      onClose();
-    } catch {
-      setError("Failed to enable encryption. Please try again.");
-    } finally {
-      setIsEnabling(false);
-    }
-  };
-
-  const handleDisableEncryption = () => {
-    if (confirm("Are you sure you want to disable encryption? Your goals will no longer be password-protected.")) {
-      disableEncryption();
-      onClose();
-    }
-  };
+  const isEncryptionEnabled = process.env.NEXT_PUBLIC_ENABLE_ENCRYPTION === 'true';
+  const isCompressionEnabled = process.env.NEXT_PUBLIC_ENABLE_COMPRESSION === 'true';
 
   if (!isOpen) return null;
 
@@ -57,7 +18,7 @@ export function EncryptionSettingsModal({ isOpen, onClose }: EncryptionSettingsM
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Encryption Settings
+            Security & Storage Settings
           </h2>
           <button
             onClick={onClose}
@@ -70,126 +31,84 @@ export function EncryptionSettingsModal({ isOpen, onClose }: EncryptionSettingsM
         <div className="space-y-4">
           {/* Current Status */}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${encryptionEnabled ? 'bg-green-500' : 'bg-gray-400'}`} />
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {encryptionEnabled ? 'Encryption Enabled' : 'Encryption Disabled'}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {encryptionEnabled 
-                    ? 'Your goals are password-protected and encrypted in the URL'
-                    : 'Your goals are stored in plain text in the URL'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Encryption Info */}
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="text-blue-500 mt-0.5">🔒</div>
-              <div>
-                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
-                  How Encryption Works
-                </h4>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  When enabled, your goals are encrypted using Web Crypto API before being 
-                  compressed into the URL. Only users with the password can decrypt and view your goals.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {!encryptionEnabled ? (
-            /* Enable Encryption Form */
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Set Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter a strong password"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${isEncryptionEnabled ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {isEncryptionEnabled ? 'Encryption Enabled' : 'Encryption Disabled'}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {isEncryptionEnabled 
+                      ? 'Your goals are encrypted in the URL'
+                      : 'Your goals are stored in plain text in the URL'
+                    }
+                  </p>
+                </div>
               </div>
               
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${isCompressionEnabled ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {isCompressionEnabled ? 'Compression Enabled' : 'Compression Disabled'}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {isCompressionEnabled 
+                      ? 'URL data is compressed to save space'
+                      : 'URL data is stored uncompressed'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* How It Works */}
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="text-blue-500 mt-0.5">🔗</div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your password"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              {error && (
-                <div className="text-red-600 dark:text-red-400 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleEnableEncryption}
-                  disabled={isEnabling || !password || !confirmPassword}
-                  className="flex-1"
-                >
-                  {isEnabling ? 'Enabling...' : 'Enable Encryption'}
-                </Button>
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
+                  Powered by Slug Store
+                </h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Your goals are automatically saved to the URL using advanced compression and optional encryption. 
+                  No database required - everything is shareable and persistent!
+                </p>
               </div>
             </div>
-          ) : (
-            /* Disable Encryption */
-            <div className="space-y-4">
-              <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-yellow-500 mt-0.5">⚠️</div>
-                  <div>
-                    <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-200 mb-1">
-                      Warning
-                    </h4>
-                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                      Disabling encryption will make your goals visible to anyone with the URL. 
-                      Make sure you want to remove this protection.
-                    </p>
-                  </div>
-                </div>
-              </div>
+          </div>
 
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleDisableEncryption}
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  Disable Encryption
-                </Button>
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Keep Enabled
-                </Button>
+          {/* Configuration Info */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+              Current Configuration
+            </h4>
+            <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex justify-between">
+                <span>Encryption:</span>
+                <span className="font-mono">{isEncryptionEnabled ? 'ENABLED' : 'DISABLED'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Compression:</span>
+                <span className="font-mono">{isCompressionEnabled ? 'ENABLED' : 'DISABLED'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Debounce:</span>
+                <span className="font-mono">500ms</span>
               </div>
             </div>
-          )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              onClick={onClose}
+              className="flex-1"
+            >
+              Got it!
+            </Button>
+          </div>
         </div>
       </div>
     </div>
