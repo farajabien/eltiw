@@ -1,272 +1,243 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Goal, GoalProgress } from "@/lib/types/goal";
+import { useState } from "react";
+import { Goal } from "@/lib/types/goal";
 import { GoalCard } from "./GoalCard";
+import { GoalsTable } from './GoalsTable';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { 
+  LayoutGrid, 
+  Table, 
+  Search, 
+  Filter,
+  SortAsc,
+  Target,
+  CheckCircle2,
+  Clock,
+  AlertTriangle
+} from 'lucide-react';
 
 interface GoalsListProps {
   goals: Goal[];
-  searchQuery?: string;
-  onUpdateGoal: (goalId: string, updates: Partial<Goal>) => void;
-  onDeleteGoal: (goalId: string) => void;
-  onAddProgress?: (goalId: string, progress: Omit<GoalProgress, "id" | "date">) => void;
-  onToggleCompletion?: (goalId: string) => void;
+  onEdit: (goal: Goal) => void;
+  onDelete: (goalId: string) => void;
+  onAddProgress: (goalId: string, amount: number, note?: string) => void;
 }
 
-export function GoalsList({ 
-  goals, 
-  searchQuery = "", 
-  onUpdateGoal, 
-  onDeleteGoal,
-  onAddProgress,
-  onToggleCompletion
-}: GoalsListProps) {
-  const [filteredGoals, setFilteredGoals] = useState<Goal[]>(goals);
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'overdue'>('all');
-  const [sortBy, setSortBy] = useState<'name' | 'progress' | 'targetDate' | 'cost'>('targetDate');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [isLoading, setIsLoading] = useState(false);
+type ViewMode = 'cards' | 'table';
+type SortBy = 'name' | 'deadline' | 'progress' | 'amount';
+type FilterBy = 'all' | 'completed' | 'active' | 'overdue' | 'urgent';
 
-  // Helper functions moved from store
-  const getGoalProgress = (goal: Goal): number => {
-    const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
-    return goal.cost > 0 ? (totalSaved / goal.cost) * 100 : 0;
-  };
+export function GoalsList({ goals, onEdit, onDelete, onAddProgress }: GoalsListProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('deadline');
+  const [filterBy, setFilterBy] = useState<FilterBy>('all');
 
-  const isGoalOverdue = (goal: Goal): boolean => {
-    if (goal.isCompleted) return false;
-    return new Date() > new Date(goal.targetDate);
-  };
-
-  // Apply filters and sorting
-  useEffect(() => {
-    setIsLoading(true);
-    
-    let processedGoals = [...goals];
-
-    // Apply search query first
-    if (searchQuery) {
-      processedGoals = processedGoals.filter(goal =>
-        goal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        goal.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    // Then apply filter
-    switch (filter) {
-      case 'active':
-        processedGoals = processedGoals.filter(goal => !goal.isCompleted);
-        break;
-      case 'completed':
-        processedGoals = processedGoals.filter(goal => goal.isCompleted);
-        break;
-      case 'overdue':
-        processedGoals = processedGoals.filter(goal => isGoalOverdue(goal) && !goal.isCompleted);
-        break;
-    }
-    
-    // Finally, apply sorting
-    processedGoals.sort((a, b) => {
-      let aValue: string | number, bValue: string | number;
+  // Filter and sort goals
+  const filteredAndSortedGoals = goals
+    .filter(goal => {
+      // Search filter
+      const matchesSearch = goal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (goal.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       
+      if (!matchesSearch) return false;
+
+      // Category filter
+      const today = new Date();
+      const targetDate = new Date(goal.targetDate);
+      const daysRemaining = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      switch (filterBy) {
+        case 'completed':
+          return goal.isCompleted;
+        case 'active':
+          return !goal.isCompleted && daysRemaining > 0;
+        case 'overdue':
+          return !goal.isCompleted && daysRemaining < 0;
+        case 'urgent':
+          return !goal.isCompleted && daysRemaining <= 30 && daysRemaining > 0;
+        default:
+          return true;
+      }
+    })
+    .sort((a, b) => {
       switch (sortBy) {
         case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
+          return a.name.localeCompare(b.name);
+        case 'deadline':
+          return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
         case 'progress':
-          aValue = getGoalProgress(a);
-          bValue = getGoalProgress(b);
-          break;
-        case 'targetDate':
-          aValue = new Date(a.targetDate).getTime();
-          bValue = new Date(b.targetDate).getTime();
-          break;
-        case 'cost':
-          aValue = a.cost;
-          bValue = b.cost;
-          break;
+          const aProgress = a.progress.reduce((sum, p) => sum + p.amount, 0) / a.cost;
+          const bProgress = b.progress.reduce((sum, p) => sum + p.amount, 0) / b.cost;
+          return bProgress - aProgress;
+        case 'amount':
+          return b.cost - a.cost;
         default:
           return 0;
       }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
     });
-    
-    setFilteredGoals(processedGoals);
-    
-    // Simulate loading delay for smooth UX
-    const timer = setTimeout(() => setIsLoading(false), 150);
-    return () => clearTimeout(timer);
-  }, [goals, filter, sortBy, sortOrder, searchQuery]);
 
-  const getFilterCount = (filterType: typeof filter) => {
-    switch (filterType) {
-      case 'active':
-        return goals.filter(goal => !goal.isCompleted).length;
-      case 'completed':
-        return goals.filter(goal => goal.isCompleted).length;
-      case 'overdue':
-        return goals.filter(goal => isGoalOverdue(goal) && !goal.isCompleted).length;
-      default:
-        return goals.length;
-    }
+  // Calculate statistics
+  const stats = {
+    total: goals.length,
+    completed: goals.filter(g => g.isCompleted).length,
+    active: goals.filter(g => !g.isCompleted).length,
+    overdue: goals.filter(g => {
+      const daysRemaining = Math.ceil((new Date(g.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      return !g.isCompleted && daysRemaining < 0;
+    }).length,
+    urgent: goals.filter(g => {
+      const daysRemaining = Math.ceil((new Date(g.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      return !g.isCompleted && daysRemaining <= 30 && daysRemaining > 0;
+    }).length
   };
 
-  const EmptyState = () => (
-    <div className="text-center py-12">
-      <div className="text-6xl mb-4">🎯</div>
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-        {filter === 'all' ? 'No goals yet' : `No ${filter} goals`}
-      </h3>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">
-        {filter === 'all' 
-          ? 'Start by creating your first financial goal!' 
-          : `You don't have any ${filter} goals at the moment.`
-        }
-      </p>
-      {filter !== 'all' && (
-        <button
-          onClick={() => setFilter('all')}
-          className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
-        >
-          View all goals
-        </button>
-      )}
-    </div>
-  );
-
-  const LoadingState = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded"></div>
-            <div className="flex-1">
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-1"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-1 bg-gray-300 dark:bg-gray-600 rounded"></div>
-            <div className="flex gap-1 mt-3">
-              <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded flex-1"></div>
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  if (goals.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-6xl mb-4">🎯</div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Goals Yet</h3>
+        <p className="text-gray-600 mb-6">Start by creating your first goal to track your progress!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Filters and Sorting */}
+      {/* Statistics Bar */}
+      <div className="flex flex-wrap gap-3">
+        <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+          <Target className="h-3 w-3 mr-1" />
+          {stats.total} Total
+        </Badge>
+        <Badge variant="secondary" className="bg-green-50 text-green-700">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          {stats.completed} Completed
+        </Badge>
+        <Badge variant="secondary" className="bg-gray-50 text-gray-700">
+          <Clock className="h-3 w-3 mr-1" />
+          {stats.active} Active
+        </Badge>
+        {stats.urgent > 0 && (
+          <Badge variant="secondary" className="bg-orange-50 text-orange-700">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            {stats.urgent} Urgent
+          </Badge>
+        )}
+        {stats.overdue > 0 && (
+          <Badge variant="secondary" className="bg-red-50 text-red-700">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            {stats.overdue} Overdue
+          </Badge>
+        )}
+      </div>
+
+      {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        {/* Filter Tabs */}
-        <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-          {(['all', 'active', 'completed', 'overdue'] as const).map((filterType) => (
-            <button
-              key={filterType}
-              onClick={() => setFilter(filterType)}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 ${
-                filter === filterType
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-              <span className="ml-1 text-xs opacity-75">({getFilterCount(filterType)})</span>
-            </button>
-          ))}
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search goals..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-64"
+            />
+          </div>
+          
+          <Select value={filterBy} onValueChange={(value) => setFilterBy(value as FilterBy)}>
+            <SelectTrigger className="w-40">
+              <div className="flex items-center">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Goals</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortBy)}>
+            <SelectTrigger className="w-40">
+              <div className="flex items-center">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="deadline">By Deadline</SelectItem>
+              <SelectItem value="name">By Name</SelectItem>
+              <SelectItem value="progress">By Progress</SelectItem>
+              <SelectItem value="amount">By Amount</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Sort Controls */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600 dark:text-gray-400">Sort by:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        {/* View Toggle */}
+        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('cards')}
+            className="h-8 px-3"
           >
-            <option value="targetDate">Target Date</option>
-            <option value="progress">Progress</option>
-            <option value="name">Name</option>
-            <option value="cost">Cost</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            <LayoutGrid className="h-4 w-4 mr-1" />
+            Cards
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="h-8 px-3"
           >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
+            <Table className="h-4 w-4 mr-1" />
+            Table
+          </Button>
         </div>
       </div>
 
-      {/* Goals Grid */}
-      {isLoading ? (
-        <LoadingState />
-      ) : filteredGoals.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredGoals.map((goal, index) => (
-            <div
-              key={goal.id}
-              className="animate-fade-in"
-              style={{
-                animationDelay: `${index * 50}ms`,
-                animationFillMode: 'both'
-              }}
-            >
-              <GoalCard
-                goal={goal}
-                onUpdateGoal={onUpdateGoal}
-                onDeleteGoal={onDeleteGoal}
-                onAddProgress={onAddProgress}
-                onToggleCompletion={onToggleCompletion}
-              />
-            </div>
-          ))}
+      {/* Results Info */}
+      {filteredAndSortedGoals.length !== goals.length && (
+        <div className="text-sm text-gray-600">
+          Showing {filteredAndSortedGoals.length} of {goals.length} goals
         </div>
       )}
 
-      {/* Summary Stats */}
-      {filteredGoals.length > 0 && (
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredGoals.length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Goals</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {filteredGoals.filter(g => g.isCompleted).length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {filteredGoals.filter(g => !g.isCompleted).length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Active</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">
-                {filteredGoals.filter(g => isGoalOverdue(g) && !g.isCompleted).length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Overdue</div>
-            </div>
-          </div>
+      {/* Goals Display */}
+      {filteredAndSortedGoals.length === 0 ? (
+        <div className="text-center py-12">
+          <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No goals found</h3>
+          <p className="text-gray-600">Try adjusting your search or filter criteria</p>
         </div>
+      ) : viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredAndSortedGoals.map((goal) => (
+            <GoalCard
+              key={goal.id}
+              goal={goal}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onAddProgress={onAddProgress}
+            />
+          ))}
+        </div>
+      ) : (
+        <GoalsTable
+          goals={filteredAndSortedGoals}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddProgress={onAddProgress}
+        />
       )}
     </div>
   );

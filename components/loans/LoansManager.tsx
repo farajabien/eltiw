@@ -47,17 +47,6 @@ export function LoansManager() {
     }
   }, [loans, isLoading]);
 
-  const addLoan = (loan: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newLoan: Loan = {
-      ...loan,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setLoans([...loans, newLoan]);
-    setShowAddLoan(false);
-  };
-
   const updateLoan = (id: string, updates: Partial<Loan>) => {
     setLoans(loans.map(loan => 
       loan.id === id 
@@ -179,9 +168,8 @@ export function LoansManager() {
 
       {/* Add Loan Modal */}
       <AddLoanModal
-        isOpen={showAddLoan}
-        onAdd={addLoan}
-        onClose={() => setShowAddLoan(false)}
+        open={showAddLoan}
+        onOpenChange={setShowAddLoan}
       />
     </div>
   );

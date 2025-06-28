@@ -2,12 +2,24 @@ export interface Loan {
   id: string;
   borrowerName: string;
   amount: number;
+  amountPaid: number; // Track how much has been paid
   deadline: string; // ISO date string
   isRepaid: boolean;
   category: LoanCategory;
   notes?: string;
+  followupNotes?: string; // For promises and follow-up reminders
+  nextFollowupDate?: string; // When to check again
+  paymentHistory: PaymentRecord[]; // Track all payments
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
+}
+
+export interface PaymentRecord {
+  id: string;
+  amount: number;
+  date: string; // ISO date string
+  note?: string;
+  method?: string; // Cash, Bank Transfer, etc.
 }
 
 export interface LoanCalculations {
@@ -17,6 +29,7 @@ export interface LoanCalculations {
   overdueLoans: number;
   upcomingDeadlines: number;
   averageLoanAmount: number;
+  upcomingFollowups: number;
 }
 
 export interface LoanFormData {
@@ -25,6 +38,14 @@ export interface LoanFormData {
   deadline: string;
   category: LoanCategory;
   notes?: string;
+  followupNotes?: string;
+  nextFollowupDate?: string;
+}
+
+export interface PaymentFormData {
+  amount: string | number;
+  note?: string;
+  method?: string;
 }
 
 export type LoanCategory = 

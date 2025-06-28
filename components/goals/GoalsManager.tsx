@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Goal, GoalProgress } from "@/lib/types/goal";
+import { Goal } from "@/lib/types/goal";
 import { GoalsList } from "@/components/goals/GoalsList";
 import { AddGoalModal } from "@/components/goals/AddGoalModal";
 import { ShareGoalsModal } from "@/components/goals/ShareGoalsModal";
@@ -85,7 +85,7 @@ export function GoalsManager() {
     toast.success("Goal deleted successfully!");
   };
 
-  const addProgress = (goalId: string, progressData: Omit<GoalProgress, "id" | "date">) => {
+  const addProgress = (goalId: string, amount: number, note?: string) => {
     setState(prevState => ({
       ...prevState,
       goals: prevState.goals.map((goal) =>
@@ -95,8 +95,9 @@ export function GoalsManager() {
               progress: [
                 ...goal.progress,
                 {
-                  ...progressData,
                   id: crypto.randomUUID(),
+                  amount,
+                  note,
                   date: new Date().toISOString(),
                 },
               ],
@@ -108,24 +109,17 @@ export function GoalsManager() {
     toast.success("Progress added successfully!");
   };
 
-  const toggleGoalCompletion = (goalId: string) => {
-    setState(prevState => ({
-      ...prevState,
-      goals: prevState.goals.map((goal) =>
-        goal.id === goalId
-          ? { ...goal, isCompleted: !goal.isCompleted, updatedAt: new Date().toISOString() }
-          : goal
-      ),
-    }));
-    toast.success("Goal status updated!");
-  };
-
   // Search functionality
   const setSearchQuery = (query: string) => {
     setState(prevState => ({
       ...prevState,
       searchQuery: query
     }));
+  };
+
+  // Wrapper function for GoalsList onEdit prop
+  const handleEditGoal = (updatedGoal: Goal) => {
+    updateGoal(updatedGoal.id, updatedGoal);
   };
 
   // Computed values
@@ -293,11 +287,9 @@ export function GoalsManager() {
 
       <GoalsList
         goals={state.goals}
-        searchQuery={state.searchQuery}
-        onUpdateGoal={updateGoal}
-        onDeleteGoal={deleteGoal}
+        onEdit={handleEditGoal}
+        onDelete={deleteGoal}
         onAddProgress={addProgress}
-        onToggleCompletion={toggleGoalCompletion}
       />
 
       {/* Modals */}
