@@ -15,25 +15,25 @@ export default function Home() {
             className="rounded-2xl bg-muted px-4 py-1.5 text-sm font-medium"
             target="_blank"
           >
-            Powered by Slug Store - The No-Database Revolution
+            ✨ Powered by Slug Store v3.1 - Now with Built-in Dev Tools
           </Link>
           <h1 className="font-bold text-3xl sm:text-5xl md:text-6xl lg:text-7xl">
             Every Lil Thing I Want
           </h1>
           <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-            Track your personal goals with deadline planning, progress tracking, and secure link-based sharing. 
+            Complete financial tracking for <strong className="text-foreground">goals & loans</strong> with deadline planning, progress tracking, and instant URL sharing. 
             <strong className="text-foreground"> No database required</strong> - powered by revolutionary Slug Store technology.
           </p>
           <div className="space-x-4">
             <Link
-              href="/goals"
+              href="/loans"
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-11 px-8"
             >
-              Start Tracking Goals
+              Start Tracking
             </Link>
             <Link
               href="https://slugstore.fbien.com"
-              target="_blank"
+            target="_blank"
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-11 px-8"
             >
               Learn About Slug Store
@@ -46,80 +46,80 @@ export default function Home() {
       <section className="container mx-auto space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
-            Features
+            Complete Financial Toolkit
           </h2>
           <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-            Everything you need to track, plan, and achieve your goals.
+            Everything you need to track goals, manage loans, and plan your financial future.
           </p>
         </div>
         <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3">
-          {/* Feature 1 */}
+          {/* Feature 1 - Goals */}
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <div className="space-y-2">
-                <h3 className="font-bold">💰 Smart Financial Planning</h3>
+                <h3 className="font-bold">🎯 Smart Goal Planning</h3>
                 <p className="text-sm text-muted-foreground">
-                  Automatically calculate monthly savings needed based on your goal cost and deadline.
+                  Track savings goals with automatic monthly calculations, progress bars, and deadline management.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Feature 2 */}
+          {/* Feature 2 - Loans */}
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <div className="space-y-2">
-                <h3 className="font-bold">📊 Progress Tracking</h3>
+                <h3 className="font-bold">💸 Loan Tracking</h3>
                 <p className="text-sm text-muted-foreground">
-                  Visual progress bars and check-ins to keep you motivated and on track.
+                  Manage loans to friends & family with categories, deadlines, and repayment status tracking.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Feature 3 */}
+          {/* Feature 3 - Sharing */}
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <div className="space-y-2">
-                <h3 className="font-bold">🔗 Instant Sharing</h3>
+                <h3 className="font-bold">📱 Instant Sharing</h3>
                 <p className="text-sm text-muted-foreground">
-                  Share your goals via compressed URLs with 30-70% size reduction. No login required.
+                  One-click URL sharing with native share dialog, clipboard copy, and compressed URLs.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Feature 4 */}
+          {/* Feature 4 - No Database */}
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <div className="space-y-2">
-                <h3 className="font-bold">🚀 No Database</h3>
+                <h3 className="font-bold">🚀 Zero Infrastructure</h3>
                 <p className="text-sm text-muted-foreground">
-                  Powered by Slug Store technology. Zero infrastructure, infinite scalability.
+                  Powered by Slug Store v3.1. No servers, no databases, no maintenance. Just works.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Feature 5 */}
+          {/* Feature 5 - Dev Tools */}
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <div className="space-y-2">
-                <h3 className="font-bold">📧 Email Snapshots</h3>
+                <h3 className="font-bold">🛠️ Built-in Dev Tools</h3>
                 <p className="text-sm text-muted-foreground">
-                  Send progress snapshots via email with embedded shareable links.
+                  copySlug(), shareSlug(), getSlugData() - powerful utilities for effortless URL state management.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Feature 6 */}
+          {/* Feature 6 - Security */}
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
               <div className="space-y-2">
-                <h3 className="font-bold">🔐 Secure & Private</h3>
+                <h3 className="font-bold">🔐 Privacy First</h3>
                 <p className="text-sm text-muted-foreground">
-                  Optional encryption, no personal data transmission, complete privacy control.
+                  IndexedDB offline storage, optional encryption, and complete privacy control.
                 </p>
               </div>
             </div>
@@ -134,34 +134,34 @@ export default function Home() {
             The No-Database Revolution
           </h2>
           <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-            ELTIW leverages Slug Store - the perfect balance between ephemeral state and complex databases.
+            ELTIW leverages Slug Store v3.1 - the perfect balance between ephemeral state and complex databases.
           </p>
-          <div className="w-full max-w-2xl mt-8">
+          <div className="w-full max-w-3xl mt-8">
             <div className="bg-muted rounded-lg p-6 font-mono text-sm">
-              <div className="text-center space-y-2">
-                <div>Ephemeral State ←→ <strong className="text-primary">[SLUG STORE]</strong> ←→ Full Database</div>
+              <div className="text-center space-y-3">
+                <div>Ephemeral State ←→ <strong className="text-primary">[SLUG STORE v3.1]</strong> ←→ Full Database</div>
                 <div className="text-xs text-muted-foreground mt-4">
-                  ↑ Perfect Balance:
+                  ↑ Perfect Balance + Built-in Dev Tools:
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  • Instant persistence • Zero infrastructure
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  • Unlimited scalability • Maximum simplicity
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-2">
+                  <div>• copySlug() - Instant clipboard</div>
+                  <div>• shareSlug() - Native sharing</div>
+                  <div>• getSlugData() - State access</div>
+                  <div>• 72% smaller bundle size</div>
                 </div>
               </div>
             </div>
           </div>
           <div className="flex flex-col gap-2 min-[400px]:flex-row">
             <Link
-              href="/goals"
+              href="/loans"
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-11 px-8"
             >
               Try It Now
             </Link>
             <Link
               href="https://github.com/farajabien/slug-store"
-              target="_blank"
+          target="_blank"
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-11 px-8"
             >
               View Source
@@ -177,7 +177,7 @@ export default function Home() {
             How It Works
           </h2>
           <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-            Simple, powerful goal tracking in three steps.
+            Complete financial tracking in three simple steps.
           </p>
         </div>
         
@@ -188,9 +188,9 @@ export default function Home() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
                 1
               </div>
-              <h3 className="font-bold text-xl">Add Your Goals</h3>
+              <h3 className="font-bold text-xl">Add Goals & Loans</h3>
               <p className="text-muted-foreground">
-                Enter what you want, how much it costs, and when you want it. We&apos;ll calculate the monthly savings needed.
+                Track what you want to save for and money you&apos;ve loaned out. Set deadlines and amounts automatically.
               </p>
             </div>
 
@@ -201,7 +201,7 @@ export default function Home() {
               </div>
               <h3 className="font-bold text-xl">Track Progress</h3>
               <p className="text-muted-foreground">
-                Log your savings progress with visual progress bars. Watch as you get closer to your goals.
+                Log savings progress, mark loans as repaid, and watch visual progress bars keep you motivated.
               </p>
             </div>
 
@@ -210,10 +210,41 @@ export default function Home() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
                 3
               </div>
-              <h3 className="font-bold text-xl">Share & Celebrate</h3>
+              <h3 className="font-bold text-xl">Share Instantly</h3>
               <p className="text-muted-foreground">
-                Share your progress via secure links or email snapshots. Celebrate when you reach your goals!
+                One-click sharing via URLs, native share dialog, or clipboard copy. No signup required.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="container mx-auto py-8 md:py-12 lg:py-24">
+        <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
+          <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
+            Built for Real Life
+          </h2>
+          <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
+            Real features for real financial tracking needs.
+          </p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 w-full max-w-4xl">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">100%</div>
+              <div className="text-sm text-muted-foreground">Complete Features</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">0</div>
+              <div className="text-sm text-muted-foreground">Servers Required</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">5.5KB</div>
+              <div className="text-sm text-muted-foreground">Total Bundle Size</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">∞</div>
+              <div className="text-sm text-muted-foreground">Scalability</div>
             </div>
           </div>
         </div>
@@ -226,14 +257,22 @@ export default function Home() {
             Ready to Start?
           </h2>
           <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-            Join the no-database revolution. Track your goals with zero setup, infinite possibilities.
+            Join the no-database revolution. Track goals and loans with zero setup, infinite possibilities.
           </p>
-          <Link
-            href="/goals"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-11 px-8"
-          >
-            Start Tracking Goals
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              href="/loans"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-11 px-8"
+            >
+              Start Tracking
+            </Link>
+            <Link
+              href="/goals"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-11 px-8"
+            >
+              View Goals Only
+            </Link>
+          </div>
         </div>
       </section>
     </div>

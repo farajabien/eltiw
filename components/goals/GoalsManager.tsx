@@ -1,23 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Goal } from "@/lib/types/goal";
+import { Goal, GoalProgress } from "@/lib/types/goal";
 import { GoalsList } from "@/components/goals/GoalsList";
 import { AddGoalModal } from "@/components/goals/AddGoalModal";
 import { ShareGoalsModal } from "@/components/goals/ShareGoalsModal";
 import { EncryptionSettingsModal } from "@/components/goals/EncryptionSettingsModal";
-import { useGoalsStore } from "@/lib/stores/goalsStore";
+import { SearchInput } from "@/components/SearchInput";
+import { useSlugStore, copySlug, shareSlug } from "@farajabien/slug-store";
+import { toast } from "sonner";
+
+// Goals state interface
+interface GoalsState {
+  goals: Goal[];
+  searchQuery: string;
+}
+
+// Default initial state
+const defaultGoalsState: GoalsState = {
+  goals: [],
+  searchQuery: "",
+};
 
 export function GoalsManager() {
-  const { 
-    goals, 
-    addGoal, 
-    updateGoal, 
-    deleteGoal,
-    getTotalSaved,
-    getOverallProgress,
-    getCompletedGoals
-  } = useGoalsStore();
+  const [state, setState, { isLoading, slug }] = useSlugStore<GoalsState>(
+    'goals',
+    defaultGoalsState,
+    {
+      url: true,
+      compress: process.env.NEXT_PUBLIC_ENABLE_COMPRESSION === 'true',
+      encrypt: process.env.NEXT_PUBLIC_ENABLE_ENCRYPTION === 'true',
+      password: process.env.NEXT_PUBLIC_ENCRYPTION_PASSWORD,
+      offline: {
+        storage: 'indexeddb',
+        ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
+      }
+    }
+  );
 
   const [isClient, setIsClient] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -28,26 +47,142 @@ export function GoalsManager() {
     setIsClient(true);
   }, []);
 
-  const handleAddGoal = (goalData: Omit<Goal, "id" | "createdAt" | "updatedAt">) => {
-    addGoal(goalData);
+  // Goal actions
+  const addGoal = (goalData: Omit<Goal, "id" | "createdAt" | "updatedAt">) => {
+    const goal: Goal = {
+      ...goalData,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      progress: [],
+      isCompleted: false,
+    };
+    setState(prevState => ({
+      ...prevState,
+      goals: [goal, ...prevState.goals]
+    }));
     setIsAddModalOpen(false);
+    toast.success("Goal added successfully!");
   };
 
-  const handleUpdateGoal = (goalId: string, updates: Partial<Goal>) => {
-    updateGoal(goalId, updates);
+  const updateGoal = (goalId: string, updates: Partial<Goal>) => {
+    setState(prevState => ({
+      ...prevState,
+      goals: prevState.goals.map((goal) =>
+        goal.id === goalId
+          ? { ...goal, ...updates, updatedAt: new Date().toISOString() }
+          : goal
+      ),
+    }));
+    toast.success("Goal updated successfully!");
   };
 
-  const handleDeleteGoal = (goalId: string) => {
-    deleteGoal(goalId);
+  const deleteGoal = (goalId: string) => {
+    setState(prevState => ({
+      ...prevState,
+      goals: prevState.goals.filter((goal) => goal.id !== goalId),
+    }));
+    toast.success("Goal deleted successfully!");
+  };
+
+  const addProgress = (goalId: string, progressData: Omit<GoalProgress, "id" | "date">) => {
+    setState(prevState => ({
+      ...prevState,
+      goals: prevState.goals.map((goal) =>
+        goal.id === goalId
+          ? {
+              ...goal,
+              progress: [
+                ...goal.progress,
+                {
+                  ...progressData,
+                  id: crypto.randomUUID(),
+                  date: new Date().toISOString(),
+                },
+              ],
+              updatedAt: new Date().toISOString(),
+            }
+          : goal
+      ),
+    }));
+    toast.success("Progress added successfully!");
+  };
+
+  const toggleGoalCompletion = (goalId: string) => {
+    setState(prevState => ({
+      ...prevState,
+      goals: prevState.goals.map((goal) =>
+        goal.id === goalId
+          ? { ...goal, isCompleted: !goal.isCompleted, updatedAt: new Date().toISOString() }
+          : goal
+      ),
+    }));
+    toast.success("Goal status updated!");
+  };
+
+  // Search functionality
+  const setSearchQuery = (query: string) => {
+    setState(prevState => ({
+      ...prevState,
+      searchQuery: query
+    }));
+  };
+
+  // Computed values
+  const getTotalSaved = (): number => {
+    return state.goals.reduce((total, goal) =>
+      total + goal.progress.reduce((sum, p) => sum + p.amount, 0), 0
+    );
+  };
+
+  const getTotalTargetAmount = (): number => {
+    return state.goals.reduce((sum, goal) => sum + goal.cost, 0);
+  };
+
+  const getOverallProgress = (): number => {
+    const totalSaved = getTotalSaved();
+    const totalTargetAmount = getTotalTargetAmount();
+    return totalTargetAmount > 0 ? (totalSaved / totalTargetAmount) * 100 : 0;
+  };
+
+  const getCompletedGoals = (): Goal[] => {
+    return state.goals.filter((g) => g.isCompleted);
+  };
+
+  // Handle sharing with new slug-store dev tools
+  const handleCopyURL = async () => {
+    try {
+      await copySlug();
+      toast.success("Goals URL copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy URL");
+      console.error('Copy failed:', err);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const goalCount = state.goals.length;
+      const completedCount = getCompletedGoals().length;
+      const totalSaved = getTotalSaved();
+      
+      await shareSlug(
+        `My ELTIW Goals (${completedCount}/${goalCount} completed)`,
+        `Check out my goal tracking progress! I've saved $${totalSaved.toLocaleString()} toward my goals. 🎯`
+      );
+    } catch {
+      // Fallback to copy if native share is not available
+      await handleCopyURL();
+    }
   };
 
   // Calculate stats
-  const totalGoals = goals.length;
+  const totalGoals = state.goals.length;
   const completedGoals = getCompletedGoals().length;
   const totalSaved = getTotalSaved();
   const overallProgress = getOverallProgress();
 
-  if (!isClient) {
+  if (isLoading || !isClient) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -87,7 +222,7 @@ export function GoalsManager() {
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      {goals.length > 0 && (
+      {state.goals.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard title="Total Goals" value={totalGoals} />
           <StatCard title="Completed" value={`${completedGoals} / ${totalGoals}`} />
@@ -108,6 +243,11 @@ export function GoalsManager() {
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Track your financial goals and progress
             </p>
+            {slug && (
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                🔗 Shareable URL generated
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <button
@@ -118,11 +258,18 @@ export function GoalsManager() {
               Add Goal
             </button>
             <button
-              onClick={() => setIsShareModalOpen(true)}
+              onClick={handleShare}
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
             >
-              <span className="mr-2">🔗</span>
+              <span className="mr-2">📱</span>
               Share
+            </button>
+            <button
+              onClick={handleCopyURL}
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+            >
+              <span className="mr-2">📋</span>
+              Copy URL
             </button>
             <button
               onClick={() => setIsEncryptionModalOpen(true)}
@@ -135,24 +282,36 @@ export function GoalsManager() {
         </div>
       </div>
 
+      {/* Search Input */}
+      <div className="mb-6">
+        <SearchInput
+          searchQuery={state.searchQuery}
+          setSearchQuery={setSearchQuery}
+          placeholder="Search your goals..."
+        />
+      </div>
+
       <GoalsList
-        goals={goals}
-        onUpdateGoal={handleUpdateGoal}
-        onDeleteGoal={handleDeleteGoal}
+        goals={state.goals}
+        searchQuery={state.searchQuery}
+        onUpdateGoal={updateGoal}
+        onDeleteGoal={deleteGoal}
+        onAddProgress={addProgress}
+        onToggleCompletion={toggleGoalCompletion}
       />
 
       {/* Modals */}
       <AddGoalModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAddGoal={handleAddGoal}
+        onAddGoal={addGoal}
       />
 
       <ShareGoalsModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        shareUrl={window.location.href}
-        goalCount={goals.length}
+        shareUrl={slug || window.location.href}
+        goalCount={state.goals.length}
       />
 
       <EncryptionSettingsModal

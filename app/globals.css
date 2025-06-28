@@ -76,6 +76,22 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* 🎨 OKLCH Color System for Categories */
+  /* Loan Categories */
+  --color-pressing: oklch(0.65 0.15 0);     /* Red for urgent */
+  --color-other: oklch(0.70 0.12 40);      /* Orange for other */
+  --color-personal: oklch(0.65 0.12 240);  /* Blue for personal */
+  
+  /* Goal Categories */
+  --color-savings: oklch(0.65 0.12 120);   /* Green for savings */
+  --color-purchase: oklch(0.70 0.12 280);  /* Purple for purchases */
+  --color-travel: oklch(0.70 0.12 200);    /* Cyan for travel */
+  
+  /* Status Colors */
+  --color-success: oklch(0.65 0.15 120);   /* Green */
+  --color-warning: oklch(0.75 0.15 60);    /* Yellow */
+  --color-error: oklch(0.60 0.15 0);       /* Red */
 }
 
 .dark {
@@ -110,6 +126,17 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Dark mode adjustments for custom colors */
+  --color-pressing: oklch(0.75 0.15 0);     
+  --color-other: oklch(0.80 0.12 40);      
+  --color-personal: oklch(0.75 0.12 240);  
+  --color-savings: oklch(0.75 0.12 120);   
+  --color-purchase: oklch(0.80 0.12 280);  
+  --color-travel: oklch(0.80 0.12 200);    
+  --color-success: oklch(0.75 0.15 120);   
+  --color-warning: oklch(0.85 0.15 60);    
+  --color-error: oklch(0.70 0.15 0);       
 }
 
 @layer base {
@@ -125,10 +152,21 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
+/* 💫 Micro-Animations */
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-1deg); }
+  75% { transform: rotate(1deg); }
+}
+
+@keyframes pulse-cute {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.8; }
 }
 
 @keyframes fadeIn {
@@ -140,6 +178,64 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  .animate-bounce-subtle {
+    animation: bounce-subtle 0.6s ease-in-out;
+  }
+  
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out;
+  }
+  
+  .animate-pulse-cute {
+    animation: pulse-cute 2s ease-in-out infinite;
+  }
+
+  /* Respect user preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-bounce-subtle, 
+    .animate-wiggle, 
+    .animate-pulse-cute,
+    .animate-fade-in {
+      animation: none;
+    }
+  }
+
+  /* Focus ring utility */
+  .focus-ring {
+    outline: none;
+    ring-offset: 2px;
+    ring-offset-color: var(--background);
+    transition: all 200ms;
+    ring: 2px solid oklch(var(--primary) / 0.5);
+  }
+
+  /* Category color utilities */
+  .text-pressing { color: var(--color-pressing); }
+  .text-other { color: var(--color-other); }
+  .text-personal { color: var(--color-personal); }
+  .text-savings { color: var(--color-savings); }
+  .text-purchase { color: var(--color-purchase); }
+  .text-travel { color: var(--color-travel); }
+  .text-success { color: var(--color-success); }
+  .text-warning { color: var(--color-warning); }
+  .text-error { color: var(--color-error); }
+
+  .bg-pressing { background-color: var(--color-pressing); }
+  .bg-other { background-color: var(--color-other); }
+  .bg-personal { background-color: var(--color-personal); }
+  .bg-savings { background-color: var(--color-savings); }
+  .bg-purchase { background-color: var(--color-purchase); }
+  .bg-travel { background-color: var(--color-travel); }
+  .bg-success { background-color: var(--color-success); }
+  .bg-warning { background-color: var(--color-warning); }
+  .bg-error { background-color: var(--color-error); }
 }
 
 /* Custom scrollbar */

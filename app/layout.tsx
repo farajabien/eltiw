@@ -5,7 +5,7 @@ import "./globals.css";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { SearchInput } from "@/components/SearchInput";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,6 +105,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <PerformanceMonitor />
+          <Toaster />
           <div className="relative flex min-h-screen flex-col">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="container mx-auto flex h-14 items-center">
@@ -117,15 +118,15 @@ export default function RootLayout({
                   <nav className="flex items-center space-x-6 text-sm font-medium">
                     <Link
                       className="transition-colors hover:text-foreground/80 text-foreground/60"
-                      href="/goals"
+                      href="/loans"
                     >
-                      My Goals
+                      Dashboard
                     </Link>
                     <Link
                       className="transition-colors hover:text-foreground/80 text-foreground/60"
-                      href="/dashboard"
+                      href="/goals"
                     >
-                      Dashboard
+                      Goals
                     </Link>
                     <Link
                       className="transition-colors hover:text-foreground/80 text-foreground/60"
@@ -137,7 +138,7 @@ export default function RootLayout({
                 </div>
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
                   <div className="w-full flex-1 md:w-auto md:flex-none">
-                    <SearchInput />
+                    {/* SearchInput component is removed as per the instructions */}
                   </div>
                   <nav className="flex items-center">
                     <ThemeToggle />

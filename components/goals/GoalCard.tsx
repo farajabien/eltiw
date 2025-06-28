@@ -6,44 +6,51 @@ import { AddProgressModal } from "./AddProgressModal";
 import { EditGoalModal } from "./EditGoalModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { ProgressHistoryModal } from "./ProgressHistoryModal";
-import { useGoalsStore } from "@/lib/stores/goalsStore";
 
 interface GoalCardProps {
   goal: Goal;
   onUpdateGoal: (goalId: string, updates: Partial<Goal>) => void;
   onDeleteGoal: (goalId: string) => void;
+  onAddProgress?: (goalId: string, progress: Omit<GoalProgress, "id" | "date">) => void;
+  onToggleCompletion?: (goalId: string) => void;
 }
 
-export function GoalCard({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) {
+export function GoalCard({ 
+  goal, 
+  onUpdateGoal, 
+  onDeleteGoal, 
+  onAddProgress, 
+  onToggleCompletion 
+}: GoalCardProps) {
   const [isAddProgressOpen, setIsAddProgressOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use Slug Store for all calculations
-  const {
-    getGoalProgress,
-    getGoalMonthlyNeeded,
-    getGoalTimeRemaining,
-    isGoalOverdue,
-    addProgress,
-    toggleGoalCompletion,
-  } = useGoalsStore();
-
-  const progress = getGoalProgress(goal.id);
-  const monthlyNeeded = getGoalMonthlyNeeded(goal);
-  const monthsRemaining = getGoalTimeRemaining(goal);
-  const isOverdue = isGoalOverdue(goal);
+  // Calculate values inline
   const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
+  const progress = goal.cost > 0 ? (totalSaved / goal.cost) * 100 : 0;
+  
+  const now = new Date();
+  const targetDate = new Date(goal.targetDate);
+  const isOverdue = !goal.isCompleted && now > targetDate;
+  
+  const timeDiff = targetDate.getTime() - now.getTime();
+  const monthsRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24 * 30.44)));
+  
+  const remainingAmount = Math.max(0, goal.cost - totalSaved);
+  const monthlyNeeded = monthsRemaining > 0 ? remainingAmount / monthsRemaining : remainingAmount;
 
   const handleAddProgress = async (progressData: GoalProgress) => {
     setIsLoading(true);
     try {
-      addProgress(goal.id, {
-        amount: progressData.amount,
-        note: progressData.note,
-      });
+      if (onAddProgress) {
+        onAddProgress(goal.id, {
+          amount: progressData.amount,
+          note: progressData.note,
+        });
+      }
       setIsAddProgressOpen(false);
     } finally {
       setIsLoading(false);
@@ -53,7 +60,9 @@ export function GoalCard({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) {
   const handleToggleCompletion = async () => {
     setIsLoading(true);
     try {
-      toggleGoalCompletion(goal.id);
+      if (onToggleCompletion) {
+        onToggleCompletion(goal.id);
+      }
     } finally {
       setIsLoading(false);
     }

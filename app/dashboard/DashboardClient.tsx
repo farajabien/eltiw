@@ -2,17 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useGoalsStore } from '@/lib/stores/goalsStore';
+import { useSlugStore } from '@farajabien/slug-store';
 import { Goal } from '@/lib/types/goal';
 
+// Goals state interface
+interface GoalsState {
+  goals: Goal[];
+  searchQuery: string;
+}
+
 export function DashboardClient() {
-  const {
-    goals,
-    getTotalSaved,
-    getTotalTargetAmount,
-    getOverallProgress,
-    getCompletedGoals,
-  } = useGoalsStore();
+  const [state] = useSlugStore<GoalsState>(
+    'goals',
+    { goals: [], searchQuery: "" },
+    {
+      url: false, // Don't update URL on dashboard
+      offline: { storage: 'indexeddb' }
+    }
+  );
   
   const [mounted, setMounted] = useState(false);
 
@@ -31,12 +38,15 @@ export function DashboardClient() {
     );
   }
 
-  // Calculate statistics
+  // Calculate statistics inline
+  const goals = state.goals;
   const totalGoals = goals.length;
-  const completedGoals = getCompletedGoals().length;
-  const totalTargetAmount = getTotalTargetAmount();
-  const totalProgress = getTotalSaved();
-  const overallProgress = getOverallProgress();
+  const completedGoals = goals.filter(g => g.isCompleted).length;
+  const totalTargetAmount = goals.reduce((sum, goal) => sum + goal.cost, 0);
+  const totalProgress = goals.reduce((total, goal) =>
+    total + goal.progress.reduce((sum, p) => sum + p.amount, 0), 0
+  );
+  const overallProgress = totalTargetAmount > 0 ? (totalProgress / totalTargetAmount) * 100 : 0;
   const remainingAmount = totalTargetAmount - totalProgress;
 
   // Get recent activity (last 5 progress entries across all goals)

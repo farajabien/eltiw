@@ -1,24 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Goal } from "@/lib/types/goal";
+import { Goal, GoalProgress } from "@/lib/types/goal";
 import { GoalCard } from "./GoalCard";
-import { useGoalsStore } from "@/lib/stores/goalsStore";
 
 interface GoalsListProps {
   goals: Goal[];
+  searchQuery?: string;
   onUpdateGoal: (goalId: string, updates: Partial<Goal>) => void;
   onDeleteGoal: (goalId: string) => void;
+  onAddProgress?: (goalId: string, progress: Omit<GoalProgress, "id" | "date">) => void;
+  onToggleCompletion?: (goalId: string) => void;
 }
 
-export function GoalsList({ goals, onUpdateGoal, onDeleteGoal }: GoalsListProps) {
+export function GoalsList({ 
+  goals, 
+  searchQuery = "", 
+  onUpdateGoal, 
+  onDeleteGoal,
+  onAddProgress,
+  onToggleCompletion
+}: GoalsListProps) {
   const [filteredGoals, setFilteredGoals] = useState<Goal[]>(goals);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'overdue'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'progress' | 'targetDate' | 'cost'>('targetDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { getGoalProgress, isGoalOverdue, searchQuery } = useGoalsStore();
+  // Helper functions moved from store
+  const getGoalProgress = (goal: Goal): number => {
+    const totalSaved = goal.progress.reduce((sum, p) => sum + p.amount, 0);
+    return goal.cost > 0 ? (totalSaved / goal.cost) * 100 : 0;
+  };
+
+  const isGoalOverdue = (goal: Goal): boolean => {
+    if (goal.isCompleted) return false;
+    return new Date() > new Date(goal.targetDate);
+  };
 
   // Apply filters and sorting
   useEffect(() => {
@@ -57,8 +75,8 @@ export function GoalsList({ goals, onUpdateGoal, onDeleteGoal }: GoalsListProps)
           bValue = b.name.toLowerCase();
           break;
         case 'progress':
-          aValue = getGoalProgress(a.id);
-          bValue = getGoalProgress(b.id);
+          aValue = getGoalProgress(a);
+          bValue = getGoalProgress(b);
           break;
         case 'targetDate':
           aValue = new Date(a.targetDate).getTime();
@@ -84,7 +102,7 @@ export function GoalsList({ goals, onUpdateGoal, onDeleteGoal }: GoalsListProps)
     // Simulate loading delay for smooth UX
     const timer = setTimeout(() => setIsLoading(false), 150);
     return () => clearTimeout(timer);
-  }, [goals, filter, sortBy, sortOrder, getGoalProgress, isGoalOverdue, searchQuery]);
+  }, [goals, filter, sortBy, sortOrder, searchQuery]);
 
   const getFilterCount = (filterType: typeof filter) => {
     switch (filterType) {
@@ -211,6 +229,8 @@ export function GoalsList({ goals, onUpdateGoal, onDeleteGoal }: GoalsListProps)
                 goal={goal}
                 onUpdateGoal={onUpdateGoal}
                 onDeleteGoal={onDeleteGoal}
+                onAddProgress={onAddProgress}
+                onToggleCompletion={onToggleCompletion}
               />
             </div>
           ))}
